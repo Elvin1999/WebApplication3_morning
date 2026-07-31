@@ -1,6 +1,8 @@
 
 using Microsoft.EntityFrameworkCore;
 using WebApplication3.Data;
+using WebApplication3.Formatters;
+using WebApplication3.Mappers;
 using WebApplication3.Repository.Abstract;
 using WebApplication3.Repository.Concrete;
 using WebApplication3.Services;
@@ -17,10 +19,17 @@ namespace WebApplication3
 
             // Add services to the container.
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers(options =>
+            {
+                options.OutputFormatters.Add(new CarVCardOutputFormatter());
+            });
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+            builder.Services.AddAutoMapper(cfg => {
+                cfg.LicenseKey = builder.Configuration["AutoMapper:LicenseKey"]!;
+            }, typeof(Program).Assembly);
 
             var connection = builder.Configuration.GetConnectionString("MyConnection");
             builder.Services.AddDbContext<CarContext>(options => options.UseSqlServer(connection));
