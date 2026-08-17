@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using WebApplication3.Data;
 using WebApplication3.Formatters;
 using WebApplication3.Mappers;
+using WebApplication3.Middlewares;
 using WebApplication3.Repository.Abstract;
 using WebApplication3.Repository.Concrete;
 using WebApplication3.Services;
@@ -50,9 +51,11 @@ namespace WebApplication3
                 app.UseSwaggerUI();
             }
 
+            app.UseMiddleware<ExceptionMiddleware>();
+
             app.UseHttpsRedirection();
 
-            app.UseAuthorization();
+            app.UseMiddleware<RequestLoggingMiddleware>();
 
             app.MapControllers();
 

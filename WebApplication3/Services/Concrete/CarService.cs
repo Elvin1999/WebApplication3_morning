@@ -1,4 +1,5 @@
 ﻿using WebApplication3.Entities;
+using WebApplication3.Models;
 using WebApplication3.Repository.Abstract;
 using WebApplication3.Services.Abstract;
 
@@ -13,28 +14,33 @@ namespace WebApplication3.Services.Concrete
             _carRepo = carRepo;
         }
 
-        public Car Add(Car car)
+        public async Task<Car> Add(Car car)
         {
-            var result=_carRepo.Add(car);
-            _carRepo.SaveChanges();
+            var result=await _carRepo.Add(car);
+            await _carRepo.SaveChanges();
             return result;
         }
 
-        public bool Delete(Car car)
+        public async Task<bool> Delete(Car car)
         {
-            _carRepo.Delete(car);
-            var result=_carRepo.SaveChanges();
+            await _carRepo.Delete(car);
+            var result=await _carRepo.SaveChanges();
             return result;
         }
 
-        public IQueryable<Car> Get()
+        public async Task<List<Car>> Get()
         {
-            return _carRepo.Get();
+            return await _carRepo.Get();
         }
 
-        public Car? Get(int id)
+        public async Task<Car?> Get(int id)
         {
-            return _carRepo.Get(id);
+            return await _carRepo.Get(id);
+        }
+
+        public async Task<PagedResult<Car>> GetAll(int page, int pageSize)
+        {
+            return await _carRepo.GetAll(page, pageSize);
         }
 
         public int GetCarAge(Car car)
@@ -43,10 +49,10 @@ namespace WebApplication3.Services.Concrete
             return difference > 0 ? difference : 0;
         }
 
-        public Car Update(Car car)
+        public async Task<Car> Update(Car car)
         {
-            var result=_carRepo.Update(car);
-            _carRepo.SaveChanges();
+            var result= await _carRepo.Update(car);
+            await _carRepo.SaveChanges();
             return result;
         }
     }

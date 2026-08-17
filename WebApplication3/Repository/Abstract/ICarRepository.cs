@@ -1,14 +1,16 @@
 ﻿using WebApplication3.Entities;
+using WebApplication3.Models;
 
 namespace WebApplication3.Repository.Abstract
 {
     public interface ICarRepository
     {
-        IQueryable<Car> Get();
-        Car? Get(int id);
-        void Delete(Car car);
-        Car Update(Car car);
-        Car Add(Car car);
-        bool SaveChanges();
+        Task<List<Car>> Get();
+        Task<PagedResult<Car>> GetAll(int page,int pageSize);
+        Task<Car?> Get(int id);
+        Task Delete(Car car);
+        Task<Car> Update(Car car);
+        Task<Car> Add(Car car);
+        Task<bool> SaveChanges();
     }
 }

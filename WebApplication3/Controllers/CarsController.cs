@@ -1,12 +1,14 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using WebApplication3.Entities;
-using WebApplication3.Data;
-using WebApplication3.Services.Abstract;
-using WebApplication3.Dtos;
 using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+using WebApplication3.Data;
+using WebApplication3.Dtos;
+using WebApplication3.Entities;
+using WebApplication3.Models;
+using WebApplication3.Services.Abstract;
 
-[Route("api/[controller]")]
+[Route("api/v1/[controller]")]
 [ApiController]
 public class CarsController : ControllerBase
 {
@@ -20,7 +22,7 @@ public class CarsController : ControllerBase
     }
 
     [HttpGet]
-    public ActionResult<IEnumerable<CarDto>> Get()
+    public async Task<ActionResult<IEnumerable<CarDto>>> Get()
     {
         //var cars = _carService.Get()
         //    .Select(c => new CarDto
@@ -32,19 +34,30 @@ public class CarsController : ControllerBase
         //        Year = c.Year,
         //        CarAge = _carService.GetCarAge(c)
         //    });
-        var cars = _mapper.Map<IEnumerable<CarDto>>(_carService.Get());
+        var carsFromService = await _carService.Get();
+        var cars = _mapper.Map<IEnumerable<CarDto>>(carsFromService);
 
         return Ok(cars);
     }
 
-    [HttpGet("{id:int}")]
-    public ActionResult<CarDto> Get(int id)
+    [HttpGet("partial")]
+    public async Task<ActionResult<PagedResult<Car>>> GetAll(int page=1,int pageSize=10)
     {
-        var car = _carService.Get(id);
+      
+        var carsFromService = await _carService.GetAll(page,pageSize);
+        
+        return Ok(carsFromService);
+    }
+
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<CarDto>> Get(int id)
+    {
+        var car = await _carService.Get(id);
         if (car == null)
         {
             return NotFound();
         }
+
         //var carDto = new CarDto
         //{
         //    Id = car.Id,
@@ -60,7 +73,7 @@ public class CarsController : ControllerBase
     }
 
     [HttpPost]
-    public ActionResult Post([FromBody] CarAddDto dto)
+    public async Task<ActionResult> Post([FromBody] CarAddDto dto)
     {
         //var car = new Car
         //{
@@ -72,7 +85,7 @@ public class CarsController : ControllerBase
 
         var car = _mapper.Map<Car>(dto);
 
-        var createdCar = _carService.Add(car);
+        var createdCar = await _carService.Add(car);
         return CreatedAtAction(nameof(Get), new
         {
             id = createdCar.Id,
@@ -80,11 +93,11 @@ public class CarsController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    public ActionResult Put(int id,[FromBody] CarUpdateDto dto)
+    public async Task<ActionResult> Put(int id,[FromBody] CarUpdateDto dto)
     {
         try
         {
-            var car=_carService.Get(id);
+            var car=await _carService.Get(id);
             if (car == null) return NotFound();
 
             //car.Vendor = dto.Vendor;
@@ -92,7 +105,7 @@ public class CarsController : ControllerBase
             //car.Model = dto.Model;
             _mapper.Map(dto, car);
 
-            var updatedCar=_carService.Update(car);
+            var updatedCar=await _carService.Update(car);
             return NoContent();
         }
         catch (Exception ex)
@@ -100,4 +113,20 @@ public class CarsController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
+
+    [HttpDelete("{id:int}")]
+    public async Task<ActionResult> Delete(int id)
+    {
+        var car = await _carService.Get(id);
+        if (car == null)
+        {
+            return NotFound();
+        }
+
+      
+        var carDto = await _carService.Delete(car);
+
+        return Ok(carDto);
+    }
+
 }
