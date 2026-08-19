@@ -1,4 +1,5 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,7 @@ using WebApplication3.Services.Abstract;
 
 [Route("api/v1/[controller]")]
 [ApiController]
+[Authorize]
 public class CarsController : ControllerBase
 {
     private readonly ICarService _carService;
@@ -73,6 +75,7 @@ public class CarsController : ControllerBase
     }
 
     [HttpPost]
+
     public async Task<ActionResult> Post([FromBody] CarAddDto dto)
     {
         //var car = new Car

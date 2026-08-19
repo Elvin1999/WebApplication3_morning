@@ -1,9 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using WebApplication3.Entities;
 
 namespace WebApplication3.Data
 {
-    public class CarContext:DbContext
+    public class CarContext:IdentityDbContext<ApplicationUser>
     {
         public CarContext(DbContextOptions<CarContext> options)
             : base(options)
