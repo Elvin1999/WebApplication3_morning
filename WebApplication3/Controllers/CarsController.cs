@@ -11,7 +11,7 @@ using WebApplication3.Services.Abstract;
 
 [Route("api/v1/[controller]")]
 [ApiController]
-[Authorize]
+
 public class CarsController : ControllerBase
 {
     private readonly ICarService _carService;
@@ -24,6 +24,7 @@ public class CarsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize]
     public async Task<ActionResult<IEnumerable<CarDto>>> Get()
     {
         //var cars = _carService.Get()
@@ -43,6 +44,7 @@ public class CarsController : ControllerBase
     }
 
     [HttpGet("partial")]
+    [Authorize]
     public async Task<ActionResult<PagedResult<Car>>> GetAll(int page=1,int pageSize=10)
     {
       
@@ -52,6 +54,7 @@ public class CarsController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Authorize(Roles ="Manager")]
     public async Task<ActionResult<CarDto>> Get(int id)
     {
         var car = await _carService.Get(id);
@@ -75,6 +78,7 @@ public class CarsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles ="Admin,Manager")]
 
     public async Task<ActionResult> Post([FromBody] CarAddDto dto)
     {
@@ -96,6 +100,8 @@ public class CarsController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Roles = "Admin")]
+
     public async Task<ActionResult> Put(int id,[FromBody] CarUpdateDto dto)
     {
         try
@@ -118,6 +124,8 @@ public class CarsController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Admin")]
+
     public async Task<ActionResult> Delete(int id)
     {
         var car = await _carService.Get(id);

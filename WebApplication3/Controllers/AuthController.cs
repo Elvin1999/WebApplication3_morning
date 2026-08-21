@@ -7,6 +7,7 @@ using System.Security.Claims;
 using System.Text;
 using WebApplication3.Dtos;
 using WebApplication3.Entities;
+using WebApplication3.Services.Abstract;
 
 namespace WebApplication3.Controllers
 {
@@ -16,12 +17,15 @@ namespace WebApplication3.Controllers
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IConfiguration _configuration;
+        private readonly ITokenService _tokenService;
 
         public AuthController(UserManager<ApplicationUser> userManager,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            ITokenService tokenService)
         {
             _userManager = userManager;
             _configuration = configuration;
+            _tokenService = tokenService;
         }
 
         [HttpPost("register")]
@@ -47,6 +51,8 @@ namespace WebApplication3.Controllers
             });
         }
 
+
+
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto model)
         {
@@ -64,44 +70,71 @@ namespace WebApplication3.Controllers
                 return Unauthorized("Invalid email or password");
             }
 
-            var token = GenerateJwtToken(user);
+            var accessToken = await _tokenService.GenerateToken(user);
+
+            var refreshToken = _tokenService.GenerateRefreshToken();
+
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpireTime = DateTime.Now.AddDays(7);
+
+            await _userManager.UpdateAsync(user);
 
             return Ok(new
             {
-                token = token
+                accessToken,
+                refreshToken
             });
         }
 
-        private string GenerateJwtToken(ApplicationUser user)
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh(RefreshTokenDto model)
         {
-            var claims = new List<Claim>
+            var principal = _tokenService.GetPrincipalFromExpiredToken(model.AccessToken);
+
+            if (principal == null)
             {
-                new Claim(ClaimTypes.NameIdentifier,
-                user.Id),
+                return Unauthorized("Invalid access token");
+            }
 
-                new Claim(ClaimTypes.Name,
-                user.UserName!),
+            var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-                new Claim(ClaimTypes.Email,
-                user.Email!),
-            };
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
 
-            var key = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!)
-                );
+            var user = await _userManager.FindByIdAsync(userId);
 
-            var credentials = new SigningCredentials(
-                key,
-                SecurityAlgorithms.HmacSha256);
+            if (user == null)
+            {
+                return Unauthorized();
+            }
 
-            var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(15),
-                signingCredentials: credentials);
+            if (user.RefreshToken != model.RefreshToken)
+            {
+                return Unauthorized("Invalid refresh token");
+            }
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            if (user.RefreshTokenExpireTime <= DateTime.Now)
+            {
+                return Unauthorized("Refresh token expired");
+            }
+
+            var newAccessToken = _tokenService.GenerateToken(user);
+
+            var newRefreshToken = _tokenService.GenerateRefreshToken();
+
+            user.RefreshToken = newRefreshToken;
+            user.RefreshTokenExpireTime = DateTime.Now.AddDays(7);
+            await _userManager.UpdateAsync(user);
+
+            return Ok(new
+            {
+                accessToken = newAccessToken,
+                refreshToken = newRefreshToken
+            });
         }
+
+
     }
 }
